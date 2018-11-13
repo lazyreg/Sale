@@ -31,16 +31,17 @@ public class GoodsActor extends AbstractActor {
       int stock = getStock();
       int numbers = msg.getNumber();
       int coin = numbers * price;
-      if (numbers <= stock && msg.getCoin() >= coin) {
+      if (numbers <= stock) {
         stock -= numbers;
         setStock(stock);
-        //System.out.println("Good name=" + name + " stock=" + stock);
 
         response.setSaled(true);
         response.setCoin(coin);
       }
-
       sender().tell(response, getSelf());
+    }).match(Integer.class, number -> {
+      int stock = getStock();
+      setStock(stock + number);
     }).build();
   }
 

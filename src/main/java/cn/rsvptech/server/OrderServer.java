@@ -97,27 +97,39 @@ public class OrderServer {
    */
   private Boolean createOrder(SalesRequest request) {
     int customId = request.getCustomId();
-    ActorRef actorRef = ActorFactory.getInstance().getCustomActor(customId);
-    if (actorRef == null) {
+    int gId = request.getGoodsId();
+    ActorRef gActorRef = ActorFactory.getInstance().getGoodActor(gId);
+    if (gActorRef == null) {
+      return false;
+    }
+    ActorRef cActorRef = ActorFactory.getInstance().getCustomActor(customId);
+    if (cActorRef == null) {
       return false;
     }
 
-    SalesResponse response = null;
     try {
-      Future<Object> future = Patterns.ask(actorRef, request, 1000);
-      response = (SalesResponse) Await.result(future, Duration.create(1000, TimeUnit.MILLISECONDS));
+      Future<Object> future1 = Patterns.ask(gActorRef, request, 1000);
+      SalesResponse response1 = (SalesResponse) Await.result(future1, Duration.create(1000, TimeUnit.MILLISECONDS));
+      if (response1 == null || !response1.isSaled()) {
+        return false;
+      }
+      request.setCoin(response1.getCoin());
 
+      Future<Object> future2 = Patterns.ask(cActorRef, request, 1000);
+      SalesResponse response2 = (SalesResponse) Await.result(future2, Duration.create(1000, TimeUnit.MILLISECONDS));
+      if (response2 == null || !response2.isSaled()) {
+        gActorRef.tell(request.getNumber(), ActorRef.noSender());
+        return false;
+      }
+
+      ActorRef orderActor = ActorFactory.getInstance().getOrderActor();
+      Order order = new Order(request.getGoodsId(), customId, request.getNumber(), request.getCoin());
+      orderActor.tell(order, ActorRef.noSender());
+      return true;
     } catch (Exception e) {
       e.printStackTrace();
     }
-    if (response != null && response.isSaled()) {
-      //System.out.println("customId=" + customId + " goodId=" + request.getGoodsId());
-      ActorRef orderActor = ActorFactory.getInstance().getOrderActor();
-      Order order = new Order(request.getGoodsId(), customId, request.getNumber(), response.getCoin());
-      orderActor.tell(order, ActorRef.noSender());
 
-      return true;
-    }
     return false;
   }
 }

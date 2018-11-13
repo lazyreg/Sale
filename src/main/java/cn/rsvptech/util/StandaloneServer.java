@@ -17,7 +17,7 @@ import java.net.URI;
  */
 public class StandaloneServer {
   // Base URI the Grizzly HTTP server will listen on
-  public static final String BASE_URI = "http://0.0.0.0:19200/shopping";
+  public static final String BASE_URI = "http://0.0.0.0:19200/sale";
 
   /**
    * Starts Grizzly HTTP server exposing JAX-RS resources defined in this application.
